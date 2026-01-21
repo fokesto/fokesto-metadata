@@ -449,7 +449,7 @@
       </div>
 
       <p style="font-size:13px; color:var(--text-muted); margin-top:0; margin-bottom:16px;">
-        Add up to 20 Groq API keys to distribute the load. Keys are stored locally in your browser.
+        Add up to 50 Groq API keys to distribute the load. Keys are stored locally in your browser.
       </p>
 
       <div class="api-grid" id="apiKeysGrid">
@@ -501,7 +501,7 @@
     // --- INITIALIZATION ---
     function init() {
       // 1. Create API Inputs
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 50; i++) {
         const input = document.createElement('input');
         input.type = 'password';
         input.className = 'api-input';
@@ -510,9 +510,9 @@
         apiKeyInputs.push(input);
       }
 
-      // 2. Load Keys
+      // 2. Load Keys (Try new 50 storage, fallback to old 20 storage)
       try {
-        const raw = localStorage.getItem('groq_api_keys_20');
+        const raw = localStorage.getItem('groq_api_keys_50') || localStorage.getItem('groq_api_keys_20');
         if (raw) {
           const list = JSON.parse(raw);
           list.forEach((val, idx) => {
@@ -532,7 +532,7 @@
           els.apiKeyError.textContent = 'Please enter at least one API Key.';
           return;
         }
-        localStorage.setItem('groq_api_keys_20', JSON.stringify(values));
+        localStorage.setItem('groq_api_keys_50', JSON.stringify(values));
         els.apiKeyError.style.display = 'none';
         els.modal.classList.remove('active');
         els.status.textContent = 'API Keys saved.';
