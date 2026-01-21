@@ -396,6 +396,24 @@
         </div>
       </div>
 
+      <!-- BATCH CONTROLS (Manual Range & Key) -->
+      <div class="controls-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 24px;">
+        <div>
+          <label class="field-label">Start Image #</label>
+          <input type="number" id="startIdx" class="api-input" value="1" min="1" style="font-size:14px;">
+        </div>
+        <div>
+          <label class="field-label">End Image #</label>
+          <input type="number" id="endIdx" class="api-input" value="" placeholder="Max" min="1" style="font-size:14px;">
+        </div>
+        <div>
+          <label class="field-label">Active API Key</label>
+          <select id="activeKeySelect" class="premium-select" style="padding:10px;">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+      </div>
+
       <!-- FILE UPLOAD -->
       <div class="dropzone">
         <input type="file" id="imageInput" accept="image/*" multiple />
@@ -478,6 +496,11 @@
       apiKeyError: document.getElementById('apiKeyError'),
 
       mode: document.getElementById('mode'),
+      // Batch controls
+      startIdx: document.getElementById('startIdx'),
+      endIdx: document.getElementById('endIdx'),
+      activeKey: document.getElementById('activeKeySelect'),
+
       fileInput: document.getElementById('imageInput'),
       dropzoneText: document.querySelector('.dropzone-text h3'), // Added for count update
       fileError: document.getElementById('fileError'),
@@ -521,6 +544,9 @@
         }
       } catch (e) { console.error(e); }
 
+      // Populate manual key selector
+      updateKeySelector();
+
       // 3. Event Listeners
       els.openSettings.addEventListener('click', () => els.modal.classList.add('active'));
       els.closeSettings.addEventListener('click', () => els.modal.classList.remove('active'));
@@ -536,6 +562,7 @@
         els.apiKeyError.style.display = 'none';
         els.modal.classList.remove('active');
         els.status.textContent = 'API Keys saved.';
+        updateKeySelector(); // Refresh dropdown
       });
 
       els.generateBtn.addEventListener('click', startGeneration);
@@ -572,6 +599,24 @@
     }
 
 
+    function updateKeySelector() {
+      els.activeKey.innerHTML = '';
+      const keys = getKeys();
+      if (!keys.length) {
+        const opt = document.createElement('option');
+        opt.text = "No Keys Found";
+        els.activeKey.add(opt);
+        return;
+      }
+
+      keys.forEach((k, i) => {
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.text = `Key ${i + 1}`;
+        els.activeKey.add(opt);
+      });
+    }
+
     function getKeys() {
       return apiKeyInputs.map(i => i.value.trim()).filter(v => v.length > 0);
     }
@@ -580,10 +625,8 @@
 
     async function startGeneration() {
       const mode = els.mode.value;
-
-
-
       const keys = getKeys();
+
       if (!keys.length) {
         els.modal.classList.add('active');
         els.apiKeyError.textContent = 'Please add at least one API Key to start.';
@@ -592,18 +635,33 @@
       }
 
       const files = els.fileInput.files;
-      if (!files.length) {
-        showError('Please select at least one image.');
-        return;
+      if (!files.length) return showError('Please select at least one image.');
+
+      // --- MANUAL BATCH LOGIC ---
+      const start = parseInt(els.startIdx.value) || 1;
+      const end = parseInt(els.endIdx.value) || files.length;
+
+      if (start < 1 || end > files.length || start > end) {
+        return showError(`Invalid range. Valid range: 1 to ${files.length}`);
       }
-      if (files.length > 500) {
-        showError('Max 500 images allowed.');
-        return;
-      }
+
+      // Get explicitly selected key (MANUAL MODE)
+      const selectedKey = els.activeKey.value;
+      if (!selectedKey) return showError("Please select an Active API Key.");
 
       // Reset UI
       els.fileError.style.display = 'none';
       els.resultsSection.style.display = 'block';
+      // Do NOT clear previous results if doing batches, just append? 
+      // User likely wants to see everything. Let's keep it additive or clear?
+      // "generate 1 to 100... after that select 200 to 300". 
+      // Usually implies appending. But for simplicity let's clear to avoid dupes?
+      // Actually, safest is to clear for a fresh "run", or else indices get confusing.
+      // Re-reading user: "generate 1 to 100... after that I select 200 to 300".
+      // Usually better to APPEND if they are doing chunks. 
+      // Let's APPEND but check for dupes? Or just append.
+      // If startGeneration is clicked, usually it implies a new "action".
+      // Let's clear for now to ensure clean state, user can download between batches.
       els.resultsBody.innerHTML = '';
       results = [];
       lastMode = els.mode.value;
@@ -613,43 +671,31 @@
       els.retryBtn.disabled = true;
 
       let successCount = 0;
-      let keyCursor = 0; // Persistent cursor for round-robin
 
-      for (let i = 0; i < files.length; i++) {
+      // Iterate ONLY the selected range (converted to 0-based index)
+      for (let i = start - 1; i < end; i++) {
         const file = files[i];
-        els.status.textContent = `Processing ${i + 1}/${files.length}: ${file.name}...`;
+        els.status.textContent = `Processing ${i + 1} (${start}-${end}): ${file.name}...`;
 
         let data = null;
         let err = null;
 
-        // Try up to keys.length times
-        for (let attempt = 0; attempt < keys.length; attempt++) {
-          const key = keys[keyCursor % keys.length];
-
-          try {
-            data = await callGroqParams(key, file, lastMode);
-            // On success, move cursor to next key for load balancing
-            keyCursor++;
-            break;
-          } catch (e) {
-            console.warn(`Key index ${keyCursor % keys.length} failed:`, e);
-            err = e;
-            // On failure, update status and move to next key immediately
-            els.status.textContent = `Error with Key ${(keyCursor % keys.length) + 1}. Switching API Key...`;
-            keyCursor++;
-            // Small delay to let user see the status change and prevent rapid loops
-            await new Promise(r => setTimeout(r, 1000));
-          }
+        // SINGLE KEY ATTEMPT ONLY
+        try {
+          data = await callGroqParams(selectedKey, file, lastMode);
+        } catch (e) {
+          console.warn(`File ${i} failed:`, e);
+          err = e;
+          // NO AUTO-SWITCHING
         }
 
         if (data) successCount++;
         appendRow(i, file, data, data ? null : err);
       }
 
-      els.status.textContent = `Done. ${successCount}/${files.length} successful.`;
+      els.status.textContent = `Batch ${start}-${end} Done. ${successCount}/${(end - start + 1)} successful.`;
       els.generateBtn.disabled = false;
       if (successCount > 0) els.downloadBtn.disabled = false;
-
       const hasErrors = results.some(r => r.error);
       if (hasErrors) els.retryBtn.disabled = false;
     }
