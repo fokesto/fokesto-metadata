@@ -479,6 +479,7 @@
 
       mode: document.getElementById('mode'),
       fileInput: document.getElementById('imageInput'),
+      dropzoneText: document.querySelector('.dropzone-text h3'), // Added for count update
       fileError: document.getElementById('fileError'),
       generateBtn: document.getElementById('generateBtn'),
       downloadBtn: document.getElementById('downloadCsvBtn'),
@@ -543,6 +544,19 @@
 
 
       els.mode.addEventListener('change', updateHeaders);
+
+      // Update file count display
+      els.fileInput.addEventListener('change', () => {
+        const count = els.fileInput.files.length;
+        if (count > 0) {
+          els.dropzoneText.textContent = `${count} Image${count !== 1 ? 's' : ''} Selected`;
+          els.dropzoneText.style.color = 'var(--accent)';
+        } else {
+          els.dropzoneText.textContent = 'Drop images here or click to upload';
+          els.dropzoneText.style.color = 'var(--text-main)';
+        }
+      });
+
       updateHeaders(); // init
     }
 
