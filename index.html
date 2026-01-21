@@ -1,885 +1,792 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fokesto Metadata | Adobe Stock AI Generator</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+  <title>Adobe Stock Metadata & Image Prompt Generator (Groq Vision)</title>
   <style>
-    :root {
-      --bg-color: #030014;
-      --glass-bg: rgba(16, 18, 27, 0.6);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --primary: #8b5cf6;
-      --primary-hover: #7c3aed;
-      --accent: #10b981;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --input-bg: rgba(0, 0, 0, 0.3);
-      --modal-overlay: rgba(0, 0, 0, 0.75);
-    }
-
+    :root { color-scheme: dark; }
     body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg-color);
-      background-image:
-        radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 25%);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* --- Header --- */
-    header {
-      width: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       max-width: 1200px;
-      padding: 24px 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-sizing: border-box;
+      margin: 24px auto;
+      padding: 0 16px 32px;
+      background: #020617;
+      color: #e5e7eb;
     }
-
-    .brand {
-      display: flex;
-      flex-direction: column;
+    h1 { text-align: center; margin-bottom: 8px; }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 20px;
     }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 700;
-      background: linear-gradient(to right, #fff, #9ca3af);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .card {
+      background: #020617;
+      border-radius: 14px;
+      padding: 16px 18px 20px;
+      border: 1px solid #1e293b;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.5);
     }
-
-    .brand span {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    button.icon-btn {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      color: var(--text-main);
-      padding: 10px 16px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    button.icon-btn:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    /* --- Main Container --- */
-    main {
-      width: 100%;
-      max-width: 900px;
-      padding: 20px;
-      box-sizing: border-box;
-      flex: 1;
-    }
-
-    .glass-card {
-      background: var(--glass-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border);
-      border-radius: 24px;
-      padding: 32px;
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    }
-
-    /* --- Controls --- */
-    .controls-grid {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 24px;
-      margin-bottom: 24px;
-      align-items: center;
-    }
-
-    .mode-select-wrapper {
-      position: relative;
-    }
-
-    select.premium-select {
-      background: var(--input-bg);
-      border: 1px solid var(--glass-border);
-      color: var(--text-main);
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-family: inherit;
-      font-size: 14px;
-      width: 100%;
-      cursor: pointer;
-      appearance: none;
-    }
-
-    label.field-label {
+    label {
       display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #9ca3af;
+    }
+    input[type="password"],
+    input[type="file"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #1f2933;
+      background: #020617;
+      color: #f9fafb;
+      font-size: 14px;
+      box-sizing: border-box;
       margin-bottom: 8px;
     }
-
-    /* --- Dropzone --- */
-    .dropzone {
-      border: 2px dashed var(--glass-border);
-      border-radius: 16px;
-      padding: 40px;
-      text-align: center;
-      transition: all 0.2s;
-      background: rgba(255, 255, 255, 0.01);
-      margin-bottom: 24px;
-      position: relative;
-    }
-
-    .dropzone:hover {
-      border-color: var(--primary);
-      background: rgba(139, 92, 246, 0.05);
-    }
-
-    .dropzone input[type="file"] {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      opacity: 0;
-      cursor: pointer;
-    }
-
-    .dropzone-text h3 {
-      font-size: 16px;
-      margin: 0 0 4px 0;
-      color: var(--text-main);
-    }
-
-    .dropzone-text p {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    /* --- Action Bar --- */
-    .action-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-    }
-
-    button.primary-btn {
-      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    input[type="file"] { padding: 6px 4px; }
+    button {
+      background: #22c55e;
       border: none;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 15px;
-      cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.2s;
-      flex: 1;
-      max-width: 200px;
-    }
-
-    button.primary-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none !important;
-      box-shadow: none !important;
-    }
-
-    .status-text {
-      font-size: 13px;
-      color: var(--text-muted);
-      flex: 1;
-      text-align: right;
-    }
-
-    .error-msg {
-      color: #71262d;
-      background: #fecaca;
-      border: 1px solid #71262d;
-      padding: 10px;
+      color: #022c22;
+      padding: 9px 14px;
       border-radius: 8px;
-      font-size: 13px;
-      margin-top: 10px;
-      display: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-
-    /* --- Results Table --- */
-    .results-area {
-      margin-top: 32px;
-      display: none;
+    button.secondary {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
     }
-
+    button:disabled { opacity: 0.6; cursor: default; }
+    .row { margin-bottom: 14px; }
+    .error {
+      color: #fca5a5;
+      font-size: 12px;
+      margin-top: 4px;
+      white-space: pre-wrap;
+    }
+    small { font-size: 11px; color: #6b7280; }
+    #status { font-size: 13px; margin-left: 10px; color: #9ca3af; }
+    .header-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 14px;
       font-size: 13px;
     }
-
+    th, td {
+      border-bottom: 1px solid #111827;
+      padding: 6px 4px;
+      vertical-align: top;
+    }
     th {
       text-align: left;
-      padding: 12px;
-      color: var(--text-muted);
-      font-weight: 500;
-      border-bottom: 1px solid var(--glass-border);
-    }
-
-    td {
-      padding: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-      vertical-align: top;
-      color: var(--text-main);
-    }
-
-    .text-cell {
-      max-width: 300px;
-      white-space: pre-wrap;
-      line-height: 1.4;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      font-size: 11px;
-    }
-
-    /* --- Modal --- */
-    .modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--modal-overlay);
-      backdrop-filter: blur(4px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-    }
-
-    .modal-backdrop.active {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .modal {
-      background: #0f111a;
-      border: 1px solid var(--glass-border);
-      border-radius: 24px;
-      width: 90%;
-      max-width: 600px;
-      padding: 32px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: column;
-      max-height: 85vh;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-
-    .modal-header h2 {
-      margin: 0;
-      font-size: 20px;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 24px;
-    }
-
-    .api-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      overflow-y: auto;
-      padding-right: 8px;
-      margin-bottom: 20px;
-    }
-
-    .api-grid::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .api-grid::-webkit-scrollbar-thumb {
-      background: #333;
-      border-radius: 3px;
-    }
-
-    .api-input {
-      background: var(--input-bg);
-      border: 1px solid var(--glass-border);
-      color: var(--text-main);
-      padding: 10px;
-      border-radius: 8px;
-      width: 100%;
-      box-sizing: border-box;
-      font-family: monospace;
+      font-weight: 600;
+      color: #9ca3af;
       font-size: 12px;
     }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
+    tr:nth-child(even) td { background: #020617; }
+    .index-cell {
+      color: #6b7280;
+      font-size: 12px;
+      width: 40px;
+    }
+    .filename-cell {
+      word-break: break-all;
+      font-size: 12px;
+      color: #e5e7eb;
+    }
+    .title-cell { font-weight: 600; font-size: 13px; }
+    .keywords-cell {
+      font-size: 12px;
+      color: #d1d5db;
+      white-space: pre-wrap;
+    }
+    .category-cell { font-size: 12px; color: #e5e7eb; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #9ca3af;
+    }
+    .api-keys-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 6px;
+      margin-top: 4px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
     }
   </style>
 </head>
-
 <body>
+  <h1>Adobe Stock Metadata & Image Prompt Generator</h1>
+  <p class="subtitle">
+    Uses Groq <strong>vision model</strong> with up to <strong>50 API keys</strong>.<br>
+    Image #1 → Key #1, image #2 → Key #2, … image #50 → Key #50, image #51 → Key #1 again, and so on.
+  </p>
 
-  <header>
-    <div class="brand">
-      <h1>Fokesto Metadata</h1>
-      <span>AI-Powered Adobe Stock Helper</span>
+  <div class="card">
+    <!-- API SETTINGS TOGGLE -->
+    <div class="row header-row">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="toggleApiSettingsBtn" class="secondary">API key settings</button>
+        <span class="badge">
+          <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>
+          client-side only
+        </span>
+      </div>
     </div>
-    <button id="openSettingsBtn" class="icon-btn">
-      ⚙️ API Settings
-    </button>
-  </header>
 
-  <main>
-    <div class="glass-card">
-
-      <!-- MODE SELECTOR -->
-      <div class="controls-grid">
-        <div class="mode-select-wrapper">
-          <label class="field-label">Generation Mode</label>
-          <select id="mode" class="premium-select">
-            <option value="metadata">Adobe Stock Metadata (Title + Keywords)</option>
-            <option value="prompt">Image to Prompt (Reverse Engineering)</option>
-            <option value="vector">Vector Style Prompt (Flat/Minimalist)</option>
-
-          </select>
-        </div>
+    <!-- API SETTINGS PANEL (HIDDEN BY DEFAULT) -->
+    <div id="apiSettingsPanel" style="display:none; margin-bottom: 14px; border:1px solid #1f2937; border-radius:10px; padding:10px 12px;">
+      <label>Groq API Keys (up to 50)</label>
+      <div class="api-keys-grid" id="apiKeysGrid">
+        <!-- 50 inputs will be created by JS -->
       </div>
-
-      <!-- BATCH CONTROLS (Manual Range & Key) -->
-      <div class="controls-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 24px;">
-        <div>
-          <label class="field-label">Start Image #</label>
-          <input type="number" id="startIdx" class="api-input" value="1" min="1" style="font-size:14px;">
-        </div>
-        <div>
-          <label class="field-label">End Image #</label>
-          <input type="number" id="endIdx" class="api-input" value="" placeholder="Max" min="1" style="font-size:14px;">
-        </div>
-        <div>
-          <label class="field-label">Active API Key</label>
-          <select id="activeKeySelect" class="premium-select" style="padding:10px;">
-            <!-- Populated by JS -->
-          </select>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;">
+        <small>
+          Keys are stored only in this browser (localStorage).<br>
+          Image 1 uses key 1, image 2 uses key 2, … image 50 uses key 50, image 51 uses key 1 again.
+        </small>
+        <button id="saveKeysBtn" class="secondary">Save keys</button>
       </div>
-
-      <!-- FILE UPLOAD -->
-      <div class="dropzone">
-        <input type="file" id="imageInput" accept="image/*" multiple />
-        <div class="dropzone-text">
-          <h3>Drop images here or click to upload</h3>
-          <p>Supports JPG, PNG (Max 50 images for SVG)</p>
-        </div>
-      </div>
-
-      <!-- GLOBAL ERROR -->
-      <div id="fileError" class="error-msg" style="display:none; margin-bottom:16px;"></div>
-
-      <!-- ACTIONS -->
-      <div class="action-bar">
-        <button id="generateBtn" class="primary-btn">✨ Generate</button>
-        <button id="downloadCsvBtn" class="icon-btn" disabled>Download CSV</button>
-
-        <div id="status" class="status-text">Ready to start</div>
-      </div>
-
-      <!-- RESULTS TABLE -->
-      <div id="resultsSection" class="results-area">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h3 style="margin:0; font-size:16px;">Results</h3>
-          <button id="retryErrorsBtn" class="icon-btn" style="font-size:12px; padding:6px 12px;" disabled>Retry
-            Errors</button>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th width="50">#</th>
-              <th width="150">File</th>
-              <th id="headerTitle">Title / Prompt</th>
-              <th id="headerKeywords">Keywords</th>
-              <th width="100">Category</th>
-            </tr>
-          </thead>
-          <tbody id="resultsBody"></tbody>
-        </table>
-      </div>
-
+      <div id="apiKeyError" class="error"></div>
     </div>
-  </main>
 
-  <!-- SETTINGS MODAL -->
-  <div class="modal-backdrop" id="settingsModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>API Key Configuration</h2>
-        <button class="close-btn" id="closeSettingsBtn">×</button>
+    <!-- MODE -->
+    <div class="row">
+      <label for="mode">Mode</label>
+      <select id="mode">
+        <option value="metadata">Adobe Stock Metadata (title + keywords + category)</option>
+        <option value="prompt">Image → Prompt (generate detailed text prompt)</option>
+      </select>
+      <small>
+        Metadata mode: title 100–150 words, 30–45 keywords, Adobe Stock category.<br>
+        Image → Prompt: generates a long descriptive prompt for the image.
+      </small>
+    </div>
+
+    <!-- FILE INPUT -->
+    <div class="row">
+      <label for="imageInput">Select images (up to 500)</label>
+      <input type="file" id="imageInput" accept="image/*" multiple />
+      <small>Images are sent to Groq as base64. Very huge files might hit Groq’s 4MB base64 limit.</small>
+      <div id="fileError" class="error"></div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="row header-row">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+        <button id="generateBtn">Generate</button>
+        <button id="retryErrorsBtn" class="secondary" disabled>Retry errors</button>
+        <span id="status"></span>
+        <span id="errorInfo" style="font-size:12px;color:#fca5a5;display:none;">
+          Errors: <span id="errorCount">0</span>
+        </span>
       </div>
+      <button id="downloadCsvBtn" class="secondary" disabled>Download CSV</button>
+    </div>
 
-      <p style="font-size:13px; color:var(--text-muted); margin-top:0; margin-bottom:16px;">
-        Add up to 50 Groq API keys to distribute the load. Keys are stored locally in your browser.
-      </p>
+    <div id="globalError" class="error"></div>
 
-      <div class="api-grid" id="apiKeysGrid">
-        <!-- JS will inject inputs here -->
-      </div>
-
-      <div id="apiKeyError" class="error-msg" style="margin-bottom:16px;"></div>
-
-      <div class="modal-footer">
-        <button class="icon-btn" id="saveKeysBtn" style="background:var(--primary); border:none;">Save & Close</button>
-      </div>
+    <!-- RESULTS -->
+    <div id="resultsSection" style="margin-top: 10px; display:none;">
+      <h3 style="font-size:14px; margin: 0 0 6px;">Results</h3>
+      <small id="resultsSummary"></small>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>File</th>
+            <th id="headerTitle">Adobe Stock Title / Prompt</th>
+            <th id="headerKeywords">Keywords (30–45, metadata mode)</th>
+            <th id="headerCategory">Category (metadata mode)</th>
+            <th>Error (after all keys tried)</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
     </div>
   </div>
 
   <script>
-    // --- CONSTANTS ---
+    // Vision model from Groq docs
     const GROQ_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
-    // --- DOM ELEMENTS ---
-    const els = {
-      modal: document.getElementById('settingsModal'),
-      openSettings: document.getElementById('openSettingsBtn'),
-      closeSettings: document.getElementById('closeSettingsBtn'),
-      apiGrid: document.getElementById('apiKeysGrid'),
-      saveKeys: document.getElementById('saveKeysBtn'),
-      apiKeyError: document.getElementById('apiKeyError'),
+    const apiSettingsPanel   = document.getElementById('apiSettingsPanel');
+    const toggleApiSettingsBtn = document.getElementById('toggleApiSettingsBtn');
+    const apiKeysGrid        = document.getElementById('apiKeysGrid');
+    const saveKeysBtn        = document.getElementById('saveKeysBtn');
+    const apiKeyError        = document.getElementById('apiKeyError');
+    const fileInput          = document.getElementById('imageInput');
+    const fileError          = document.getElementById('fileError');
+    const generateBtn        = document.getElementById('generateBtn');
+    const retryErrorsBtn     = document.getElementById('retryErrorsBtn');
+    const downloadCsvBtn     = document.getElementById('downloadCsvBtn');
+    const statusEl           = document.getElementById('status');
+    const globalError        = document.getElementById('globalError');
+    const resultsSection     = document.getElementById('resultsSection');
+    const resultsSummary     = document.getElementById('resultsSummary');
+    const resultsBody        = document.getElementById('resultsBody');
+    const errorInfoEl        = document.getElementById('errorInfo');
+    const errorCountEl       = document.getElementById('errorCount');
+    const modeSelect         = document.getElementById('mode');
+    const headerTitle        = document.getElementById('headerTitle');
+    const headerKeywords     = document.getElementById('headerKeywords');
+    const headerCategory     = document.getElementById('headerCategory');
 
-      mode: document.getElementById('mode'),
-      // Batch controls
-      startIdx: document.getElementById('startIdx'),
-      endIdx: document.getElementById('endIdx'),
-      activeKey: document.getElementById('activeKeySelect'),
+    // API key inputs (50)
+    const apiKeyInputs = [];
 
-      fileInput: document.getElementById('imageInput'),
-      dropzoneText: document.querySelector('.dropzone-text h3'), // Added for count update
-      fileError: document.getElementById('fileError'),
-      generateBtn: document.getElementById('generateBtn'),
-      downloadBtn: document.getElementById('downloadCsvBtn'),
-
-      retryBtn: document.getElementById('retryErrorsBtn'),
-      status: document.getElementById('status'),
-
-      resultsSection: document.getElementById('resultsSection'),
-      resultsBody: document.getElementById('resultsBody'),
-      headerTitle: document.getElementById('headerTitle'),
-      headerKeywords: document.getElementById('headerKeywords')
-    };
-
-    let apiKeyInputs = [];
-    let results = [];
-    let svgs = [];
+    // Store results for CSV
+    const results = [];
     let lastMode = 'metadata';
 
-    // --- INITIALIZATION ---
-    function init() {
-      // 1. Create API Inputs
+    function setupApiKeyInputs() {
       for (let i = 0; i < 50; i++) {
         const input = document.createElement('input');
         input.type = 'password';
-        input.className = 'api-input';
-        input.placeholder = `API Key ${i + 1}`;
-        els.apiGrid.appendChild(input);
+        input.id = 'apiKey' + (i + 1);
+        input.placeholder = 'API key ' + (i + 1) + (i === 0 ? ' (required)' : ' (optional)');
+        apiKeysGrid.appendChild(input);
         apiKeyInputs.push(input);
       }
+    }
 
-      // 2. Load Keys (Try new 50 storage, fallback to old 20 storage)
+    function updateHeadersForMode(mode) {
+      if (mode === 'metadata') {
+        headerTitle.textContent    = 'Adobe Stock Title';
+        headerKeywords.textContent = 'Keywords (30–45)';
+        headerCategory.textContent = 'Category';
+      } else {
+        headerTitle.textContent    = 'Image Prompt';
+        headerKeywords.textContent = 'Keywords (N/A in prompt mode)';
+        headerCategory.textContent = 'Category (N/A in prompt mode)';
+      }
+    }
+
+    function getNonEmptyKeys() {
+      return apiKeyInputs
+        .map(i => i.value.trim())
+        .filter(v => v.length > 0);
+    }
+
+    function loadSavedKeys() {
       try {
-        const raw = localStorage.getItem('groq_api_keys_50') || localStorage.getItem('groq_api_keys_20');
-        if (raw) {
-          const list = JSON.parse(raw);
+        const raw50 = localStorage.getItem('groq_api_keys_50');
+        const raw20 = localStorage.getItem('groq_api_keys_20');
+        if (raw50) {
+          const list = JSON.parse(raw50);
           list.forEach((val, idx) => {
             if (apiKeyInputs[idx]) apiKeyInputs[idx].value = val || '';
           });
-        }
-      } catch (e) { console.error(e); }
-
-      // Populate manual key selector
-      updateKeySelector();
-
-      // 3. Event Listeners
-      els.openSettings.addEventListener('click', () => els.modal.classList.add('active'));
-      els.closeSettings.addEventListener('click', () => els.modal.classList.remove('active'));
-
-      els.saveKeys.addEventListener('click', () => {
-        const values = apiKeyInputs.map(i => i.value.trim());
-        if (!values.some(v => v)) {
-          els.apiKeyError.style.display = 'block';
-          els.apiKeyError.textContent = 'Please enter at least one API Key.';
-          return;
-        }
-        localStorage.setItem('groq_api_keys_50', JSON.stringify(values));
-        els.apiKeyError.style.display = 'none';
-        els.modal.classList.remove('active');
-        els.status.textContent = 'API Keys saved.';
-        updateKeySelector(); // Refresh dropdown
-      });
-
-      els.generateBtn.addEventListener('click', startGeneration);
-      els.retryBtn.addEventListener('click', retryErrors);
-      els.downloadBtn.addEventListener('click', downloadCsv);
-
-
-      els.mode.addEventListener('change', updateHeaders);
-
-      // Update file count display
-      els.fileInput.addEventListener('change', () => {
-        const count = els.fileInput.files.length;
-        if (count > 0) {
-          els.dropzoneText.textContent = `${count} Image${count !== 1 ? 's' : ''} Selected`;
-          els.dropzoneText.style.color = 'var(--accent)';
+        } else if (raw20) {
+          const list = JSON.parse(raw20);
+          list.forEach((val, idx) => {
+            if (apiKeyInputs[idx]) apiKeyInputs[idx].value = val || '';
+          });
         } else {
-          els.dropzoneText.textContent = 'Drop images here or click to upload';
-          els.dropzoneText.style.color = 'var(--text-main)';
+          const single = localStorage.getItem('groq_api_key');
+          if (single && apiKeyInputs[0]) apiKeyInputs[0].value = single;
         }
+      } catch (e) {
+        console.warn('Could not read localStorage:', e);
+      }
+    }
+
+    function saveKeys() {
+      apiKeyError.textContent = '';
+      globalError.textContent = '';
+      const values = apiKeyInputs.map(i => i.value.trim());
+      if (!values.some(v => v)) {
+        apiKeyError.textContent = 'Enter at least one API key before saving.';
+        return;
+      }
+      try {
+        localStorage.setItem('groq_api_keys_50', JSON.stringify(values));
+        statusEl.textContent = 'API keys saved ✔️';
+        setTimeout(() => {
+          if (statusEl.textContent === 'API keys saved ✔️') statusEl.textContent = '';
+        }, 2000);
+      } catch (e) {
+        apiKeyError.textContent = 'Could not save keys (localStorage error).';
+        console.error(e);
+      }
+    }
+
+    // Toggle API settings panel
+    toggleApiSettingsBtn.addEventListener('click', () => {
+      if (apiSettingsPanel.style.display === 'none' || apiSettingsPanel.style.display === '') {
+        apiSettingsPanel.style.display = 'block';
+      } else {
+        apiSettingsPanel.style.display = 'none';
+      }
+    });
+
+    // Helper: file → base64 (without data: prefix)
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result || '';
+          const base64 = String(result).split(',')[1] || '';
+          resolve(base64);
+        };
+        reader.onerror = () => reject(new Error('Failed to read file: ' + file.name));
+        reader.readAsDataURL(file);
       });
-
-      updateHeaders(); // init
     }
 
-    function updateHeaders() {
-      const mode = els.mode.value;
-      const isMeta = mode === 'metadata';
-      const isSvg = mode === 'svg';
+    async function generateForSelectedImages() {
+      apiKeyError.textContent = '';
+      fileError.textContent = '';
+      globalError.textContent = '';
+      resultsBody.innerHTML = '';
+      resultsSummary.textContent = '';
+      statusEl.textContent = '';
+      results.length = 0;
+      downloadCsvBtn.disabled = true;
+      retryErrorsBtn.disabled = true;
+      errorCountEl.textContent = '0';
+      errorInfoEl.style.display = 'none';
 
-      els.headerTitle.textContent = isMeta ? 'Adobe Stock Title' : 'Prompt';
-      els.headerKeywords.textContent = isMeta ? 'Keywords' : '—';
-      els.openSettings.style.display = 'flex';
-      els.downloadBtn.style.display = 'inline-flex';
-    }
+      const mode = modeSelect.value;
+      lastMode = mode;
+      updateHeadersForMode(mode);
 
-
-    function updateKeySelector() {
-      els.activeKey.innerHTML = '';
-      const keys = getKeys();
+      const keys = getNonEmptyKeys();
       if (!keys.length) {
-        const opt = document.createElement('option');
-        opt.text = "No Keys Found";
-        els.activeKey.add(opt);
+        apiKeyError.textContent = 'Please enter at least one Groq API key.';
         return;
       }
 
-      keys.forEach((k, i) => {
-        const opt = document.createElement('option');
-        opt.value = k;
-        opt.text = `Key ${i + 1}`;
-        els.activeKey.add(opt);
-      });
-    }
-
-    function getKeys() {
-      return apiKeyInputs.map(i => i.value.trim()).filter(v => v.length > 0);
-    }
-
-    // --- GENERATION LOGIC ---
-
-    async function startGeneration() {
-      const mode = els.mode.value;
-      const keys = getKeys();
-
-      if (!keys.length) {
-        els.modal.classList.add('active');
-        els.apiKeyError.textContent = 'Please add at least one API Key to start.';
-        els.apiKeyError.style.display = 'block';
+      const files = fileInput.files;
+      if (!files || files.length === 0) {
+        fileError.textContent = 'Please select at least one image.';
+        return;
+      }
+      if (files.length > 500) {
+        fileError.textContent = 'Please select up to 500 images (you selected ' + files.length + ').';
         return;
       }
 
-      const files = els.fileInput.files;
-      if (!files.length) return showError('Please select at least one image.');
+      generateBtn.disabled = true;
+      saveKeysBtn.disabled = true;
+      statusEl.textContent = 'Starting...';
 
-      // --- MANUAL BATCH LOGIC ---
-      const start = parseInt(els.startIdx.value) || 1;
-      const end = parseInt(els.endIdx.value) || files.length;
-
-      if (start < 1 || end > files.length || start > end) {
-        return showError(`Invalid range. Valid range: 1 to ${files.length}`);
-      }
-
-      // Get explicitly selected key (MANUAL MODE)
-      const selectedKey = els.activeKey.value;
-      if (!selectedKey) return showError("Please select an Active API Key.");
-
-      // Reset UI
-      els.fileError.style.display = 'none';
-      els.resultsSection.style.display = 'block';
-      // Do NOT clear previous results if doing batches, just append? 
-      // User likely wants to see everything. Let's keep it additive or clear?
-      // "generate 1 to 100... after that select 200 to 300". 
-      // Usually implies appending. But for simplicity let's clear to avoid dupes?
-      // Actually, safest is to clear for a fresh "run", or else indices get confusing.
-      // Re-reading user: "generate 1 to 100... after that I select 200 to 300".
-      // Usually better to APPEND if they are doing chunks. 
-      // Let's APPEND but check for dupes? Or just append.
-      // If startGeneration is clicked, usually it implies a new "action".
-      // Let's clear for now to ensure clean state, user can download between batches.
-      els.resultsBody.innerHTML = '';
-      results = [];
-      lastMode = els.mode.value;
-
-      els.generateBtn.disabled = true;
-      els.downloadBtn.disabled = true;
-      els.retryBtn.disabled = true;
+      // Show result table immediately so rows appear live as we process
+      resultsSection.style.display = 'block';
 
       let successCount = 0;
 
-      // Iterate ONLY the selected range (converted to 0-based index)
-      for (let i = start - 1; i < end; i++) {
+      for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        els.status.textContent = `Processing ${i + 1} (${start}-${end}): ${file.name}...`;
 
         let data = null;
-        let err = null;
+        let lastError = null;
 
-        // SINGLE KEY ATTEMPT ONLY
-        try {
-          data = await callGroqParams(selectedKey, file, lastMode);
-        } catch (e) {
-          console.warn(`File ${i} failed:`, e);
-          err = e;
-          // NO AUTO-SWITCHING
-        }
-
-        if (data) successCount++;
-        appendRow(i, file, data, data ? null : err);
-      }
-
-      els.status.textContent = `Batch ${start}-${end} Done. ${successCount}/${(end - start + 1)} successful.`;
-      els.generateBtn.disabled = false;
-      if (successCount > 0) els.downloadBtn.disabled = false;
-      const hasErrors = results.some(r => r.error);
-      if (hasErrors) els.retryBtn.disabled = false;
-    }
-
-    async function retryErrors() {
-      const keys = getKeys();
-      const files = els.fileInput.files;
-
-      els.retryBtn.disabled = true;
-      els.generateBtn.disabled = true;
-
-      let keyCursor = 0; // Reset cursor or keep persistent (local here is fine as we want to find *a* working key)
-
-      for (let i = 0; i < results.length; i++) {
-        if (!results[i].error) continue; // Skip if already successful
-
-        const file = files[i];
-        els.status.textContent = `Retrying ${file.name}...`;
-
-        let data = null;
-        let err = null;
-
-        // Try up to keys.length times using cursor logic
+        // First attempt uses keyIndex = i % keys.length (1st image -> key1, 2nd -> key2, etc.)
         for (let attempt = 0; attempt < keys.length; attempt++) {
-          const key = keys[keyCursor % keys.length];
+          const keyIndex = (i + attempt) % keys.length;
+          const apiKey = keys[keyIndex];
+
+          statusEl.textContent =
+            `Processing ${i + 1} / ${files.length} (attempt ${attempt + 1} using key ${keyIndex + 1})…`;
+
           try {
-            data = await callGroqParams(key, file, lastMode);
-            keyCursor++; // Success, move to next key
-            break;
-          } catch (e) {
-            console.warn(`Retry Key index ${keyCursor % keys.length} failed:`, e);
-            err = e;
-            els.status.textContent = `Error with Key ${(keyCursor % keys.length) + 1} on retry. Switching...`;
-            keyCursor++; // Fail, switch key
-            await new Promise(r => setTimeout(r, 1000));
+            data = await generateForImage(apiKey, file, mode);
+            lastError = null;
+            break; // success
+          } catch (err) {
+            console.error(`Error with key ${keyIndex + 1} for file ${file.name}`, err);
+            lastError = err;
           }
         }
 
         if (data) {
-          // update row
-          appendRow(i, file, data, null, true);
+          successCount++;
+          appendResultRow(i, file, data, null, mode);
         } else {
-          // Keep error state if retry failed
-          appendRow(i, file, null, err, true);
+          appendResultRow(i, file, null, lastError, mode);
         }
       }
 
-      els.status.textContent = 'Retry complete.';
-      els.generateBtn.disabled = false;
-      els.retryBtn.disabled = !results.some(r => r.error);
+      generateBtn.disabled = false;
+      saveKeysBtn.disabled = false;
+
+      const errorCount = results.filter(r => r && r.error).length;
+      errorCountEl.textContent = String(errorCount);
+      errorInfoEl.style.display = 'inline';
+
+      resultsSummary.textContent =
+        `Generated results for ${successCount} out of ${files.length} images. ` +
+        (errorCount > 0 ? `${errorCount} images still have errors.` : 'All images succeeded.');
+
+      if (successCount > 0) {
+        downloadCsvBtn.disabled = false;
+      }
+      retryErrorsBtn.disabled = errorCount === 0;
+
+      statusEl.textContent = 'All images processed ✅';
     }
 
+    async function retryErroredImages() {
+      apiKeyError.textContent = '';
+      globalError.textContent = '';
+      statusEl.textContent = '';
 
+      const mode = lastMode;
+      updateHeadersForMode(mode);
 
-    // --- API CALL ---
-    async function callGroqParams(apiKey, file, mode) {
-      const base64 = await fileToBase64(file);
-      const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64}`;
-      const cleanName = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-
-      let sys, user;
-
-      if (mode === 'metadata') {
-        sys = `You are an Adobe Stock metadata expert. Return JSON ONLY: { "title": "string (100-150 words)", "keywords": ["string", ...30-45 items], "category": "string" }. Title must be descriptive. Keywords must be relevant and ranked. ONE category from standard stock list.`;
-        user = `Image filename: ${cleanName}. Generate metadata.`;
-      } else if (mode === 'vector') {
-        sys = `You are an expert at writing prompts for vector assets. Return JSON ONLY: { "prompt": "string (50-100 words)" }. Describe the image as a flat vector illustration. Emphasize: clean lines, solid colors, no gradients, white background, minimalist style, suitable for Adobe Illustrator or SVG conversion.`;
-        user = `Image filename: ${cleanName}. Generate a flat vector art prompt.`;
-      } else {
-        sys = `You are a prompt engineer. Return JSON ONLY: { "prompt": "string (80-150 words)" }. Describe subject, lighting, style, camera settings.`;
-        user = `Image filename: ${cleanName}. Generate image prompt.`;
+      const keys = getNonEmptyKeys();
+      if (!keys.length) {
+        apiKeyError.textContent = 'Please enter at least one Groq API key.';
+        return;
       }
 
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const files = fileInput.files;
+      if (!files || !files.length || !results.length) {
+        globalError.textContent = 'Nothing to retry. Generate first.';
+        return;
+      }
+
+      generateBtn.disabled = true;
+      saveKeysBtn.disabled = true;
+      retryErrorsBtn.disabled = true;
+      downloadCsvBtn.disabled = true;
+
+      let fixedCount = 0;
+
+      for (let i = 0; i < results.length; i++) {
+        const record = results[i];
+        if (!record || !record.error) continue; // only retry rows with error
+
+        const file = files[i];
+        if (!file) continue;
+
+        let data = null;
+        let lastError = null;
+
+        for (let attempt = 0; attempt < keys.length; attempt++) {
+          const keyIndex = (i + attempt) % keys.length;
+          const apiKey = keys[keyIndex];
+
+          statusEl.textContent =
+            `Retrying image ${i + 1} (attempt ${attempt + 1} using key ${keyIndex + 1})…`;
+
+          try {
+            data = await generateForImage(apiKey, file, mode);
+            lastError = null;
+            break;
+          } catch (err) {
+            console.error(`Retry error with key ${keyIndex + 1} for file ${file.name}`, err);
+            lastError = err;
+          }
+        }
+
+        if (data) {
+          fixedCount++;
+          appendResultRow(i, file, data, null, mode);
+        } else {
+          appendResultRow(i, file, null, lastError, mode);
+        }
+      }
+
+      generateBtn.disabled = false;
+      saveKeysBtn.disabled = false;
+
+      const successCount = results.filter(r => r && !r.error).length;
+      const errorCount   = results.filter(r => r && r.error).length;
+
+      if (successCount > 0) downloadCsvBtn.disabled = false;
+      retryErrorsBtn.disabled = errorCount === 0;
+
+      errorCountEl.textContent = String(errorCount);
+      errorInfoEl.style.display = 'inline';
+
+      resultsSection.style.display = 'block';
+      resultsSummary.textContent =
+        `Retry complete. Fixed ${fixedCount} images. ` +
+        (errorCount > 0
+          ? `${errorCount} images still have errors out of ${results.length}.`
+          : 'All images are now successful.');
+
+      statusEl.textContent = 'Retry finished ✅';
+    }
+
+    function appendResultRow(index, file, data, error, mode) {
+      // Remove existing row for this index if present
+      let tr = resultsBody.querySelector(`tr[data-index="${index}"]`);
+      if (tr) {
+        tr.innerHTML = '';
+      } else {
+        tr = document.createElement('tr');
+        tr.dataset.index = index;
+        resultsBody.appendChild(tr);
+      }
+
+      const idxTd = document.createElement('td');
+      idxTd.textContent = index + 1;
+      idxTd.className = 'index-cell';
+      tr.appendChild(idxTd);
+
+      const fileTd = document.createElement('td');
+      fileTd.className = 'filename-cell';
+      fileTd.textContent = file.name;
+      tr.appendChild(fileTd);
+
+      const titleTd = document.createElement('td');
+      titleTd.className = 'title-cell';
+
+      const keywordsTd = document.createElement('td');
+      keywordsTd.className = 'keywords-cell';
+
+      const categoryTd = document.createElement('td');
+      categoryTd.className = 'category-cell';
+
+      const errorTd = document.createElement('td');
+      errorTd.className = 'error';
+
+      const record = {
+        filename: file.name,
+        title: '',
+        keywords: [],
+        category: '',
+        prompt: '',
+        error: ''
+      };
+
+      if (data && !error) {
+        if (mode === 'metadata') {
+          const title = data.title || '';
+          const keywords = Array.isArray(data.keywords) ? data.keywords : [];
+          const category = data.category || '';
+
+          titleTd.textContent = title || '(no title)';
+          keywordsTd.textContent = keywords.length ? keywords.join(', ') : '(no keywords)';
+          categoryTd.textContent = category || '(no category)';
+          errorTd.textContent = '';
+
+          record.title = title;
+          record.keywords = keywords;
+          record.category = category;
+        } else {
+          const prompt = data.prompt || '';
+          titleTd.textContent = prompt || '(no prompt)';
+          keywordsTd.textContent = '—';
+          categoryTd.textContent = '—';
+          errorTd.textContent = '';
+
+          record.prompt = prompt;
+        }
+      } else {
+        titleTd.textContent = '(error)';
+        keywordsTd.textContent = '—';
+        categoryTd.textContent = '—';
+        const msg = (error && error.message) ? error.message : 'Unknown error.';
+        errorTd.textContent = msg;
+        record.error = msg;
+      }
+
+      results[index] = record;
+      tr.appendChild(titleTd);
+      tr.appendChild(keywordsTd);
+      tr.appendChild(categoryTd);
+      tr.appendChild(errorTd);
+    }
+
+    // Generic Groq VISION call: supports both modes
+    async function generateForImage(apiKey, file, mode) {
+      const baseName    = file.name.replace(/\.[^.]+$/, '');
+      const cleanedName = baseName.replace(/[_-]+/g, ' ').trim();
+
+      const base64  = await fileToBase64(file);
+      const mime    = file.type || 'image/jpeg';
+      const dataUrl = `data:${mime};base64,${base64}`;
+
+      let systemPrompt;
+      let userPrompt;
+
+      if (mode === 'metadata') {
+        systemPrompt =
+          'You generate metadata specifically for Adobe Stock images.\n' +
+          'You receive the actual image plus a short text hint (file name).\n' +
+          'Return ONLY valid JSON with this exact shape:\n' +
+          '{ "title": string, "keywords": string[], "category": string }\n\n' +
+          'Rules:\n' +
+          '- Title: English, between 100 and 150 WORDS, very descriptive, 1–2 sentences, no spam or unnatural repetition.\n' +
+          '- Keywords: 30–45 relevant English keywords, ordered by importance, no duplicates, no quotes, no numbering.\n' +
+          '- Category: a single broad category name like "People", "Nature", "Travel", "Technology", "Business",\n' +
+          '  "Food", "Animals", "Architecture", "Sports", "Backgrounds/Textures", etc.\n' +
+          '- Do not include any extra text, comments, or code fences. Output the JSON object only.';
+        userPrompt =
+          `Adobe Stock image file.\n` +
+          `Original file name: ${file.name}\n` +
+          `Cleaned name: ${cleanedName || '(empty)'}\n\n` +
+          `Generate an Adobe Stock-style TITLE (100–150 words), KEYWORDS (30–45), and CATEGORY based on this image.`;
+      } else {
+        // image → prompt mode
+        systemPrompt =
+          'You generate detailed text prompts for image generation models based on a given image.\n' +
+          'You receive the actual image plus a short text hint (file name).\n' +
+          'Return ONLY valid JSON with this exact shape:\n' +
+          '{ "prompt": string }\n\n' +
+          'Rules:\n' +
+          '- Prompt: English, around 80–150 words, natural language, highly descriptive.\n' +
+          '- Include subject, environment, lighting, style, camera details if relevant.\n' +
+          '- Do not include any extra text, comments, or code fences. Output the JSON object only.';
+        userPrompt =
+          `Image for prompt generation.\n` +
+          `Original file name: ${file.name}\n` +
+          `Cleaned name: ${cleanedName || '(empty)'}\n\n` +
+          `Generate a single, detailed IMAGE PROMPT (80–150 words) describing this image for a text-to-image model.`;
+      }
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': 'Bearer ' + apiKey,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: GROQ_MODEL,
           messages: [
-            { role: 'system', content: sys },
+            { role: 'system', content: systemPrompt },
             {
-              role: 'user', content: [
-                { type: 'text', text: user },
+              role: 'user',
+              content: [
+                { type: 'text', text: userPrompt },
                 { type: 'image_url', image_url: { url: dataUrl } }
               ]
             }
           ],
-          response_format: { type: 'json_object' },
-          temperature: 0.5,
-          max_completion_tokens: 500
+          temperature: 0.4,
+          top_p: 1,
+          stream: false,
+          max_completion_tokens: 600,
+          response_format: { type: 'json_object' } // JSON mode
         })
       });
 
-      if (!resp.ok) throw new Error(`API Error ${resp.status}`);
-      const json = await resp.json();
-      const content = json.choices[0].message.content;
-      return JSON.parse(content);
-    }
-
-    // --- HELPERS ---
-    function appendRow(index, file, data, err, isUpdate = false) {
-      const isMeta = lastMode === 'metadata';
-
-      const rowHtml = `
-        <td>${index + 1}</td>
-        <td style="word-break:break-all; font-size:12px; opacity:0.8;">${file.name}</td>
-        <td class="text-cell">${err ? `<span style="color:#f87171">Error: ${err.message || 'Unknown'}</span>` : (isMeta ? data.title : data.prompt)}</td>
-        <td class="text-cell" style="font-size:11px; color:var(--text-muted);">${!err && isMeta ? data.keywords.join(', ') : '—'}</td>
-        <td>${!err && isMeta ? `<span class="badge">${data.category}</span>` : '—'}</td>
-      `;
-
-      if (isUpdate) {
-        const tr = document.querySelector(`tr[data-idx="${index}"]`);
-        if (tr) tr.innerHTML = rowHtml;
-        results[index] = { ...data, error: err, filename: file.name };
-      } else {
-        const tr = document.createElement('tr');
-        tr.dataset.idx = index;
-        tr.innerHTML = rowHtml;
-        els.resultsBody.appendChild(tr);
-        results.push({ ...data, error: err, filename: file.name });
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error('Groq error (' + response.status + '): ' + errorText);
       }
+
+      const data = await response.json();
+      const contentText =
+        data &&
+        data.choices &&
+        data.choices[0] &&
+        data.choices[0].message &&
+        data.choices[0].message.content
+          ? data.choices[0].message.content
+          : '';
+
+      if (!contentText) {
+        throw new Error('Empty response from model.');
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(contentText);
+      } catch (e) {
+        console.error('Failed to parse JSON from model:', e, contentText);
+        throw new Error('Model did not return valid JSON. Raw output: ' + contentText);
+      }
+
+      return parsed;
     }
 
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function fileToDataUrl(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function showError(msg) {
-      els.fileError.textContent = msg;
-      els.fileError.style.display = 'block';
+    function escCsv(value) {
+      const s = value || '';
+      const escaped = s.replace(/"/g, '""');
+      return `"${escaped}"`;
     }
 
     function downloadCsv() {
-      if (!results.length) return;
+      if (!results.length) {
+        alert('No results to export yet.');
+        return;
+      }
 
-      const isMeta = lastMode === 'metadata';
-      const headers = isMeta ? ['Filename', 'Title', 'Keywords', 'Category'] : ['Filename', 'Prompt'];
+      const mode = lastMode;
 
-      const rows = results.map(r => {
-        if (r.error) return null;
-        if (isMeta) {
-          return [clean(r.filename), clean(r.title), clean(r.keywords.join('; ')), clean(r.category)].join(',');
-        } else {
-          return [clean(r.filename), clean(r.prompt)].join(',');
-        }
-      }).filter(r => r);
+      let header;
+      const lines = [];
 
-      const csvContent = [headers.join(','), ...rows].join('\r\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `fokesto_${lastMode}_${new Date().getTime()}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (mode === 'metadata') {
+        header = ['Filename', 'Title', 'Keywords', 'Category'];
+        lines.push(header.join(','));
+
+        results.forEach(r => {
+          if (!r || r.error) return; // skip errored rows
+          const keywordsStr = Array.isArray(r.keywords) ? r.keywords.join('; ') : '';
+          lines.push([
+            escCsv(r.filename),
+            escCsv(r.title),
+            escCsv(keywordsStr),
+            escCsv(r.category)
+          ].join(','));
+        });
+      } else {
+        header = ['Filename', 'Prompt'];
+        lines.push(header.join(','));
+
+        results.forEach(r => {
+          if (!r || r.error) return;
+          lines.push([
+            escCsv(r.filename),
+            escCsv(r.prompt)
+          ].join(','));
+        });
+      }
+
+      const csv = lines.join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = (mode === 'metadata')
+        ? 'adobe_stock_metadata.csv'
+        : 'image_prompts.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
-    function clean(str) {
-      return `"${(str || '').replace(/"/g, '""')}"`;
-    }
+    // ---- bootstrap ----
+    setupApiKeyInputs();
+    loadSavedKeys();
+    updateHeadersForMode(modeSelect.value);
 
-    // Start
-    init();
-
+    saveKeysBtn.addEventListener('click', saveKeys);
+    generateBtn.addEventListener('click', generateForSelectedImages);
+    retryErrorsBtn.addEventListener('click', retryErroredImages);
+    downloadCsvBtn.addEventListener('click', downloadCsv);
   </script>
 </body>
-
 </html>
