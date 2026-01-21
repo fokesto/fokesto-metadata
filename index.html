@@ -661,8 +661,10 @@
       els.retryBtn.disabled = true;
       els.generateBtn.disabled = true;
 
+      let keyCursor = 0; // Reset cursor or keep persistent (local here is fine as we want to find *a* working key)
+
       for (let i = 0; i < results.length; i++) {
-        if (!results[i].error) continue;
+        if (!results[i].error) continue; // Skip if already successful
 
         const file = files[i];
         els.status.textContent = `Retrying ${file.name}...`;
@@ -670,19 +672,28 @@
         let data = null;
         let err = null;
 
+        // Try up to keys.length times using cursor logic
         for (let attempt = 0; attempt < keys.length; attempt++) {
-          const key = keys[(i + attempt) % keys.length];
+          const key = keys[keyCursor % keys.length];
           try {
             data = await callGroqParams(key, file, lastMode);
+            keyCursor++; // Success, move to next key
             break;
           } catch (e) {
+            console.warn(`Retry Key index ${keyCursor % keys.length} failed:`, e);
             err = e;
+            els.status.textContent = `Error with Key ${(keyCursor % keys.length) + 1} on retry. Switching...`;
+            keyCursor++; // Fail, switch key
+            await new Promise(r => setTimeout(r, 1000));
           }
         }
 
         if (data) {
           // update row
           appendRow(i, file, data, null, true);
+        } else {
+          // Keep error state if retry failed
+          appendRow(i, file, null, err, true);
         }
       }
 
