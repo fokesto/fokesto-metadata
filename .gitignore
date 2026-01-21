@@ -1,0 +1,8 @@
+exiftool*
+*.zip
+*.exe
+*.dll
+*.xlsx
+*.csv
+*.py
+New folder.jpg
